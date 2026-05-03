@@ -1,12 +1,12 @@
 #include "vizGraph.h"
 
 /* ── colors ───────────────────────────────────────────────────────── */
-Color bgCol      = (Color){ 18,  18,  24, 255 };   /* near-black        */
-Color nodeCol    = (Color){ 49,  90, 180, 255 };   /* deep blue         */
-Color nodeBorder = (Color){ 90, 140, 230, 255 };   /* lighter blue rim  */
-Color edgeCol    = (Color){180, 180, 200, 255 };   /* soft grey arrows  */
-Color weightCol  = (Color){255, 210,  80, 255 };   /* gold weights      */
-Color labelCol   = WHITE;
+const Color bgCol      = (Color){ 18,  18,  24, 255 };   /* near-black        */
+const Color nodeCol    = (Color){ 49,  90, 180, 255 };   /* deep blue         */
+const Color nodeBorder = (Color){ 90, 140, 230, 255 };   /* lighter blue rim  */
+const Color edgeCol    = (Color){180, 180, 200, 255 };   /* soft grey arrows  */
+const Color weightCol  = (Color){255, 210,  80, 255 };   /* gold weights      */
+const Color labelCol   = WHITE;
 
 void layout(Graph* graph, Vector2 pos[], bool has_edge[][MAX_VERTICES]) {
     int numVertices = graph->numOfVertices;
