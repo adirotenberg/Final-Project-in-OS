@@ -3,6 +3,9 @@
 
 #include "Node.h"
 #include "InputData.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct Graph {
 
@@ -20,5 +23,7 @@ void addNode(Graph *graph, int id);
 void addEdge(Graph *graph, int src, int dst, int weight);
 
 void freeGraph(Graph *graph);
+
+bool doesEdgeExists(Graph *graph, int src, int dst);
 
 #endif //PROJECTOS_GRAPH_H

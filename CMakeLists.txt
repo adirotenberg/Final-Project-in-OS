@@ -9,10 +9,7 @@ add_executable(ProjectOS main.c
         DijkstraRes.c
         DijkstraRes.h
         Node.h
-        Node.c
         Edge.h
-        Edge.c
         InputData.h
-        InputData.c
         MinHeap.h
         MinHeap.c)
