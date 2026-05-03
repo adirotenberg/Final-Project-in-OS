@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "Graph.h"
 #include "DijkstraRes.h"   // adjust if your file name differs
+#include "vizGraph.h"
 
 void printGraph(Graph *graph) {
 
@@ -69,6 +70,8 @@ int main() {
 
     // PRINT RESULT
     printPath(res);
+
+    drawGraph(data->graph);
 
     // cleanup
     free(res->path);
