@@ -34,7 +34,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
     }
 
     for (int i = 0; i < n; i++) {
-        dist[i] = 1e9;
+        dist[i] = INF;
         parent[i] = -1;
     }
 
@@ -68,6 +68,17 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
 
             edge = edge->next;
         }
+    }
+
+    if (dist[dst] == INF) {
+        printf("No path found\n");
+
+        free(dist);
+        free(parent);
+        free(visited);
+        freeHeap(heap);
+
+        return NULL;
     }
 
     int *temp = malloc(sizeof(int) * n);
@@ -115,6 +126,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
         free(path);
         return NULL;
     }
+
     res->path = path;
     res->pathLength = len;
     res->pathWeight = dist[dst];

@@ -1,7 +1,5 @@
 #include "Graph.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 
 InputData *readFile(const char *filename) {
 
@@ -23,11 +21,10 @@ InputData *readFile(const char *filename) {
         return NULL;
     }
 
-    if (numOfVertices < 0 || numOfEdges < 0) {
+    if (numOfVertices <= 0 || numOfEdges <= 0) {
         printf("Error: Number of vertices and Edges must be positive\n");
         fclose(fp);
         return NULL;
-        //todo - check case were V=E=0 ?
     }
 
     Graph *graph = createGraph(numOfVertices);
@@ -53,23 +50,18 @@ InputData *readFile(const char *filename) {
         }
 
         if (src < 0 || src >= graph->numOfVertices ||
-            dst < 0 || dst >= graph->numOfVertices) {
-            printf("Error: Invalid vertex index\n");
+            dst < 0 || dst >= graph->numOfVertices ||
+            weight < 0) {
+
+            printf("Error: Invalid input\n");
             freeGraph(graph);
             fclose(fp);
             return NULL;
         }
 
-        // if (src == dst) {
-        //
-        // }
-        // todo - check case
-
-        // if (edgeAlreadyExists()) {
-        // }
-        // todo - check case
-
-        addEdge(graph, src, dst, weight);
+        if (!doesEdgeExists(graph, src, dst)) {
+            addEdge(graph, src, dst, weight);
+        }
     }
 
     int dijkSrc;
@@ -85,12 +77,11 @@ InputData *readFile(const char *filename) {
     }
 
     if (dijkSrc < 0 || dijkSrc >= graph->numOfVertices ||
-    dijkDst < 0 || dijkDst >= graph->numOfVertices) {
+        dijkDst < 0 || dijkDst >= graph->numOfVertices) {
 
         freeGraph(graph);
         fclose(fp);
         return NULL;
-        //todo- check case
     }
 
     InputData *inputData = malloc(sizeof(InputData));
@@ -123,7 +114,7 @@ Graph *createGraph(int numOfVertices) {
     graph->vertices = malloc(sizeof(Node) * numOfVertices);
 
     if (graph->vertices == NULL) {
-        free(graph); //todo - might be able to use freeGraph(graph)
+        free(graph);
         return NULL;
     }
 
@@ -178,9 +169,15 @@ void freeGraph(Graph *graph) {
 
     int numOfVertices = graph->numOfVertices;
 
+    if (graph->vertices == NULL) {
+        free(graph);
+        return;
+    }
+
     for (int i = 0; i < numOfVertices; i++) {
 
         Edge *curr = graph->vertices[i].adj;
+
         Edge *next = NULL;
 
         while (curr != NULL) {
@@ -190,10 +187,21 @@ void freeGraph(Graph *graph) {
         }
     }
 
-    if (graph->vertices != NULL) {
-        free(graph->vertices);
-    }
-
+    free(graph->vertices);
     free(graph);
+}
 
+bool doesEdgeExists(Graph *graph, int src, int dst) {
+
+    Node curr = graph->vertices[src];
+
+    Edge *currEdge = curr.adj;
+
+    while (currEdge != NULL) {
+        if (currEdge->dst == dst) {
+            return true;
+        }
+        currEdge = currEdge->next;
+    }
+    return false;
 }
