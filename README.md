@@ -19,16 +19,15 @@ make clean        # Remove compiled files
 ### Input File Format
 
 ```
-<num_vertices>
-<source> <destination>
+<num_vertices> <num_edges>
 <src> <dst> <weight>
 ...
+<source> <destination>
 ```
 
 Example (input.txt):
 ```
-6
-0 5
+6 10
 0 1 4
 0 2 2
 1 2 1
@@ -39,6 +38,7 @@ Example (input.txt):
 3 4 3
 3 5 2
 4 5 3
+0 5
 ```
 
 ---

@@ -205,3 +205,20 @@ bool doesEdgeExists(Graph *graph, int src, int dst) {
     }
     return false;
 }
+
+void printGraph(Graph *graph) {
+
+    if (graph == NULL) return;
+
+    for (int i = 0; i < graph->numOfVertices; i++) {
+        printf("Node %d: ", graph->vertices[i].id);
+
+        Edge *curr = graph->vertices[i].adj;
+        while (curr != NULL) {
+            printf("-> (%d, w=%d) ", curr->dst, curr->weight);
+            curr = curr->next;
+        }
+
+        printf("\n");
+    }
+}

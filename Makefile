@@ -1,19 +1,19 @@
 # Makefile for Operating Systems Project - Traffic Simulation
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -std=c11
+CFLAGS = -Wall -Wextra -g -std=c11 $(shell pkg-config --cflags raylib)
 RAYLIB_ROOT = ./external/raylib
 RAYLIB_INCLUDE = $(RAYLIB_ROOT)/include
 RAYLIB_LIB = $(RAYLIB_ROOT)/lib
 
-SRCS = main.c Graph.c DijkstraRes.c Node.c Edge.c InputData.c MinHeap.c vizHelperFuncs.c vizGraph.c
+SRCS = main.c Graph.c DijkstraRes.c MinHeap.c vizHelperFuncs.c vizGraph.c simulation.c
 OBJS = $(SRCS:.c=.o)
 TARGET = sim
 
-RAYLIB_LIBS = -L$(RAYLIB_LIB) -lraylib -lopengl32 -lgdi32 -lwinmm
+RAYLIB_LIBS = $(shell pkg-config --libs raylib) -lm -lX11
 LIBS = -lm
 
-INPUT_FILE = input.txt
+INPUT_FILE ?= input.txt
 
 all: milestone3
 
@@ -29,8 +29,8 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) -c $< -o $@
 
-dijkstra: dijkstra.o Graph.o DijkstraRes.o Node.o Edge.o InputData.o MinHeap.o
-	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) dijkstra.o Graph.o DijkstraRes.o Node.o Edge.o InputData.o MinHeap.o -o dijkstra $(LIBS)
+dijkstra: dijkstra.o Graph.o DijkstraRes.o MinHeap.o
+	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) dijkstra.o Graph.o DijkstraRes.o MinHeap.o -o dijkstra $(LIBS)
 
 dijkstra.o: main.c Graph.h DijkstraRes.h Node.h Edge.h InputData.h MinHeap.h
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) -DDIJKSTRA_ONLY -c main.c -o dijkstra.o
