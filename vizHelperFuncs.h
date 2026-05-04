@@ -17,8 +17,6 @@
 #define SCREEN_W       800
 #define SCREEN_H       600
 
-static Vector2 rotate2(float x, float y, float theta);
-static void DrawArrowHead(Vector2 tip, float ux, float uy, Color col);
 void DrawEdge(Vector2 from, Vector2 to, int weight, bool curved, Color lineCol, Color textCol);
 void DrawSelfLoop(Vector2 pos, int weight, Color lineCol, Color textCol);
 

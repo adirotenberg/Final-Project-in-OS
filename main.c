@@ -1,48 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "DijkstraRes.h"
 #include "Graph.h"
-#include "DijkstraRes.h"   // adjust if your file name differs
-#include "vizGraph.h"
+#include "simulation.h"
 
-void printGraph(Graph *graph) {
 
-    if (graph == NULL) return;
-
-    for (int i = 0; i < graph->numOfVertices; i++) {
-        printf("Node %d: ", graph->vertices[i].id);
-
-        Edge *curr = graph->vertices[i].adj;
-        while (curr != NULL) {
-            printf("-> (%d, w=%d) ", curr->dst, curr->weight);
-            curr = curr->next;
-        }
-
-        printf("\n");
-    }
-}
-
-void printPath(DijkstraRes *res) {
-
-    if (res == NULL) {
-        printf("No result (NULL)\n");
-        return;
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <input_file>\n", argv[0]);
+        return 1;
     }
 
-    printf("Path: ");
-
-    for (int i = 0; i < res->pathLength; i++) {
-        printf("%d", res->path[i]);
-
-        if (i < res->pathLength - 1)
-            printf(" -> ");
-    }
-
-    printf("\nTotal cost: %d\n", res->pathWeight);
-}
-
-int main() {
-
-    const char *filename = "input.txt";
+    const char *filename = argv[1];
 
     InputData *data = readFile(filename);
 
@@ -71,7 +40,10 @@ int main() {
     // PRINT RESULT
     printPath(res);
 
-    drawGraph(data->graph);
+    //all the simulation part will be run only if we're not running "milestone1". when we are running milestone1 we'll get the flag DIJKSTRA_ONLY
+#ifndef DIJKSTRA_ONLY
+    simulation(data, res);
+#endif
 
     // cleanup
     free(res->path);

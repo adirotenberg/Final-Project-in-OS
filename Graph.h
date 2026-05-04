@@ -1,6 +1,8 @@
 #ifndef PROJECTOS_GRAPH_H
 #define PROJECTOS_GRAPH_H
 
+typedef struct DijkstraRes DijkstraRes;
+
 #include "Node.h"
 #include "InputData.h"
 #include <stdbool.h>
@@ -25,5 +27,7 @@ void addEdge(Graph *graph, int src, int dst, int weight);
 void freeGraph(Graph *graph);
 
 bool doesEdgeExists(Graph *graph, int src, int dst);
+
+void printGraph(Graph *graph);
 
 #endif //PROJECTOS_GRAPH_H

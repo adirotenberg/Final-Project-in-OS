@@ -22,6 +22,8 @@ add_executable(ProjectOS main.c
         vizHelperFuncs.c
         vizGraph.h
         vizGraph.c
+        simulation.c
+        simulation.h
 )
 
 

@@ -3,7 +3,6 @@
 #include "Graph.h"
 # define INF 1e9
 
-
 typedef struct DijkstraRes {
 
     int * path;
@@ -13,5 +12,6 @@ typedef struct DijkstraRes {
 }DijkstraRes;
 
 DijkstraRes *dijkstra(Graph *graph, int src, int dst);
+void printPath(DijkstraRes *res);
 
 #endif //PROJECTOS_DIJKSTRA_H
