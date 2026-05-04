@@ -72,7 +72,7 @@ void drawVertices(int numVertices, Vector2 pos[]) {
         DrawCircleLinesV(pos[i], VERTEX_RADIUS, nodeBorder);
 
         /* vertex number — centred inside the circle */
-        char label[8]; sprintf(label, "%d", i);
+        char label[12]; sprintf(label, "%d", i);
         int fw = MeasureText(label, 18);
         DrawText(label,
                  (int)(pos[i].x - fw * 0.5f),

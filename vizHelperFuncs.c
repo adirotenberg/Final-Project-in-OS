@@ -74,7 +74,7 @@ void DrawEdge(Vector2 from, Vector2 to, int weight, bool curved, Color lineCol, 
 
         /* Arrowhead: use tangent direction at t=1 */
         {
-            float t = 1.0f, it = 0.0f, dt = 1.0f / SEG;
+            float t = 1.0f, dt = 1.0f / SEG;
             float t2 = t - dt, it2 = 1.0f - t2;
             Vector2 p2 = {
                 it2*it2 * start.x + 2*it2*t2 * mx + t2*t2 * end.x,
