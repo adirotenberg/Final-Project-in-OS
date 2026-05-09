@@ -50,3 +50,10 @@ Implementation of Dijkstra's shortest path algorithm using adjacency lists and a
 
 ### Milestone 2: Graph Visualization
 Visual display using raylib with circular vertex layout, curved edges for bidirectional connections, and edge weights shown on graph.
+
+### Milestone 3: Traffic Animation
+Interactive simulation that animates an entity (plane) moving along the shortest path. Features include:
+- **Play/Pause Control:** Interactive button to start or stop the animation.
+- **Dynamic Movement:** Plane speed and travel time are determined by the weights of the edges in the graph.
+- **Node Interaction:** Simulated waiting times at intermediate nodes during the journey.
+- **Visual Feedback:** Status messages indicating current progress and arrival at the destination.
