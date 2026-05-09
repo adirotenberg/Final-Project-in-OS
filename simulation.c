@@ -2,6 +2,8 @@
 #include "vizGraph.h"
 #include <stdbool.h>
 
+static const Color simBgCol = (Color){18, 18, 24, 255};
+
 static int getEdgeWeight(Graph *graph, int src, int dst) {
     Edge *curr = graph->vertices[src].adj;
 
@@ -47,6 +49,8 @@ void simulation(InputData* data, DijkstraRes* dijkstra_res) {
     SetTraceLogLevel(LOG_NONE);
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
     InitWindow(SCREEN_W, SCREEN_H, "Traffic Simulation - Milestone 3");
+    Texture2D worldMap = LoadTexture("assets/world_map.png");
+    Texture2D plane = LoadTexture("assets/plane.png");
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
@@ -100,7 +104,18 @@ void simulation(InputData* data, DijkstraRes* dijkstra_res) {
         }
 
         BeginDrawing();
-        ClearBackground(bgCol);
+        ClearBackground(simBgCol);
+
+        DrawTexturePro(
+                worldMap,
+                (Rectangle){0, 0, worldMap.width, worldMap.height},
+                (Rectangle){0, 0, SCREEN_W, SCREEN_H},
+                (Vector2){0, 0},
+                0.0f,
+                WHITE
+        );
+
+        DrawRectangle(0, 0, SCREEN_W, SCREEN_H, (Color){0, 0, 0, 70});
 
         DrawText("Traffic Simulation", 12, 12, 20, (Color){160,160,180,255});
 
@@ -130,8 +145,14 @@ void simulation(InputData* data, DijkstraRes* dijkstra_res) {
                 entityPos = getEntityPosition(pos[src], pos[dst], currentStep, weight);
             }
 
-            DrawCircleV(entityPos, 10, ORANGE);
-            DrawCircleLinesV(entityPos, 10, BLACK);
+            DrawTexturePro(
+                    plane,
+                    (Rectangle){0, 0, plane.width, plane.height},
+                    (Rectangle){entityPos.x, entityPos.y, 42, 42},
+                    (Vector2){21, 21},
+                    0.0f,
+                    WHITE
+            );
         }
 
         if (isWaitingAtNode) {
@@ -144,6 +165,9 @@ void simulation(InputData* data, DijkstraRes* dijkstra_res) {
 
         EndDrawing();
     }
+
+    UnloadTexture(worldMap);
+    UnloadTexture(plane);
 
     CloseWindow();
 }
