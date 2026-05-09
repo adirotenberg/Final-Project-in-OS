@@ -10,7 +10,7 @@ SRCS = main.c Graph.c DijkstraRes.c MinHeap.c vizHelperFuncs.c vizGraph.c simula
 OBJS = $(SRCS:.c=.o)
 TARGET = sim
 
-RAYLIB_LIBS = $(shell pkg-config --libs raylib) -lm -lX11
+RAYLIB_LIBS = $(shell pkg-config --libs raylib) #made change for mac from - RAYLIB_LIBS = $(shell pkg-config --libs raylib) -lm -lX11
 LIBS = -lm
 
 INPUT_FILE ?= input.txt
