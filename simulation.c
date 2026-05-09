@@ -2,6 +2,8 @@
 #include "vizGraph.h"
 #include <stdbool.h>
 
+static const Color simBgCol = (Color){18, 18, 24, 255};
+
 static int getEdgeWeight(Graph *graph, int src, int dst) {
     Edge *curr = graph->vertices[src].adj;
 
@@ -100,7 +102,7 @@ void simulation(InputData* data, DijkstraRes* dijkstra_res) {
         }
 
         BeginDrawing();
-        ClearBackground(bgCol);
+        ClearBackground(simBgCol);
 
         DrawText("Traffic Simulation", 12, 12, 20, (Color){160,160,180,255});
 
