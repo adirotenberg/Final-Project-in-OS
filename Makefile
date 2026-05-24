@@ -1,7 +1,7 @@
 # Makefile for Operating Systems Project - Traffic Simulation
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -std=c11 $(shell pkg-config --cflags raylib)
+CFLAGS = -Wall -Wextra -g -std=c11
 RAYLIB_ROOT = ./external/raylib
 RAYLIB_INCLUDE = $(RAYLIB_ROOT)/include
 RAYLIB_LIB = $(RAYLIB_ROOT)/lib
@@ -10,7 +10,7 @@ SRCS = main.c Graph.c DijkstraRes.c MinHeap.c vizHelperFuncs.c vizGraph.c simula
 OBJS = $(SRCS:.c=.o)
 TARGET = sim
 
-RAYLIB_LIBS = $(shell pkg-config --libs raylib) -lm -lX11
+RAYLIB_LIBS = -L$(RAYLIB_LIB) -lraylib -lm -lpthread -ldl -lrt -lX11
 LIBS = -lm
 
 INPUT_FILE ?= input.txt

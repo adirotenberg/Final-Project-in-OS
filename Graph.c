@@ -1,8 +1,6 @@
 #include "Graph.h"
 
-
 InputData *readFile(const char *filename) {
-
     FILE *fp = fopen(filename, "r");
 
     if (fp == NULL) {
@@ -52,7 +50,6 @@ InputData *readFile(const char *filename) {
         if (src < 0 || src >= graph->numOfVertices ||
             dst < 0 || dst >= graph->numOfVertices ||
             weight < 0) {
-
             printf("Error: Invalid input\n");
             freeGraph(graph);
             fclose(fp);
@@ -64,45 +61,73 @@ InputData *readFile(const char *filename) {
         }
     }
 
-    int dijkSrc;
-    int dijkDst;
 
-    int lastRowScan = fscanf(fp, "%d %d", &dijkSrc, &dijkDst);
+    int numOfTravelers;
 
-    if (lastRowScan != 2) {
-        printf("Error: Invalid last row format\n");
+    int travelersNumScan = fscanf(fp, "%d", &numOfTravelers);
+
+    if (travelersNumScan != 1) {
+        printf("Error: Invalid travelers number row format\n");
         freeGraph(graph);
         fclose(fp);
         return NULL;
     }
 
-    if (dijkSrc < 0 || dijkSrc >= graph->numOfVertices ||
-        dijkDst < 0 || dijkDst >= graph->numOfVertices) {
+    int (*travelers)[2] = malloc(sizeof(int[2]) * numOfTravelers);
 
+    if (travelers == NULL) {
+        printf("Error: Failed to create travelers array\n");
         freeGraph(graph);
         fclose(fp);
         return NULL;
     }
+
+    for (int i = 0; i < numOfTravelers; i++) {
+        int dijkSrc;
+        int dijkDst;
+
+        int scanRow = fscanf(fp, "%d %d", &dijkSrc, &dijkDst);
+
+        if (scanRow != 2) {
+            printf("Error: Invalid row format\n");
+            freeGraph(graph);
+            free(travelers);
+            fclose(fp);
+            return NULL;
+        }
+
+        if (dijkSrc < 0 || dijkSrc >= graph->numOfVertices ||
+            dijkDst < 0 || dijkDst >= graph->numOfVertices) {
+            freeGraph(graph);
+            free(travelers);
+            fclose(fp);
+            return NULL;
+        }
+
+        travelers[i][0] = dijkSrc;
+        travelers[i][1] = dijkDst;
+    }
+
 
     InputData *inputData = malloc(sizeof(InputData));
 
     if (inputData == NULL) {
         printf("Error: Failed to create input data\n");
         freeGraph(graph);
+        free(travelers);
         fclose(fp);
         return NULL;
     }
 
     inputData->graph = graph;
-    inputData->src = dijkSrc;
-    inputData->dst = dijkDst;
+    inputData->travelers = travelers;
+    inputData->numOfTravelers = numOfTravelers;
 
     fclose(fp);
     return inputData;
 }
 
 Graph *createGraph(int numOfVertices) {
-
     Graph *graph = malloc(sizeof(Graph));
 
     if (graph == NULL) {
@@ -124,11 +149,9 @@ Graph *createGraph(int numOfVertices) {
     }
 
     return graph;
-
 }
 
 void addEdge(Graph *graph, int src, int dst, int weight) {
-
     Edge *newEdge = (Edge *) malloc(sizeof(Edge));
 
     if (newEdge == NULL) {
@@ -154,15 +177,12 @@ void addEdge(Graph *graph, int src, int dst, int weight) {
         }
         prev = curr;
         curr = curr->next;
-
     }
 
     prev->next = newEdge;
-
 }
 
 void freeGraph(Graph *graph) {
-
     if (graph == NULL) {
         return;
     }
@@ -175,7 +195,6 @@ void freeGraph(Graph *graph) {
     }
 
     for (int i = 0; i < numOfVertices; i++) {
-
         Edge *curr = graph->vertices[i].adj;
 
         Edge *next = NULL;
@@ -192,7 +211,6 @@ void freeGraph(Graph *graph) {
 }
 
 bool doesEdgeExists(Graph *graph, int src, int dst) {
-
     Node curr = graph->vertices[src];
 
     Edge *currEdge = curr.adj;
@@ -207,7 +225,6 @@ bool doesEdgeExists(Graph *graph, int src, int dst) {
 }
 
 void printGraph(Graph *graph) {
-
     if (graph == NULL) return;
 
     for (int i = 0; i < graph->numOfVertices; i++) {
