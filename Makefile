@@ -15,13 +15,15 @@ LIBS = -lm
 
 INPUT_FILE ?= input.txt
 
-all: milestone3
+all: milestone4
 
 milestone1: dijkstra
 
 milestone2: $(TARGET)
 
 milestone3: $(TARGET)
+
+milestone4: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) $(OBJS) $(RAYLIB_LIBS) -o $(TARGET)
@@ -44,4 +46,4 @@ run: $(TARGET)
 run-m1: dijkstra
 	./dijkstra $(INPUT_FILE)
 
-.PHONY: all milestone1 milestone2 milestone3 clean run run-m1
+.PHONY: all milestone1 milestone2 milestone3 milestone4 clean run run-m1

@@ -1,9 +1,10 @@
 #ifndef PROJECTOS_INPUTDATA_H
 #define PROJECTOS_INPUTDATA_H
+#define TRAVELER_FIELDS 2
 
 typedef struct {
     struct Graph *graph;
-    int (*travelers)[2];
+    int (*travelers)[TRAVELER_FIELDS];
     int numOfTravelers;
 } InputData;
 

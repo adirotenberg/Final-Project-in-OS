@@ -1,4 +1,5 @@
 #include "Graph.h"
+#define TRAVELER_FIELDS 2
 
 InputData *readFile(const char *filename) {
     FILE *fp = fopen(filename, "r");
@@ -73,7 +74,7 @@ InputData *readFile(const char *filename) {
         return NULL;
     }
 
-    int (*travelers)[2] = malloc(sizeof(int[2]) * numOfTravelers);
+    int (*travelers)[TRAVELER_FIELDS] = malloc(sizeof(int[TRAVELER_FIELDS]) * numOfTravelers);
 
     if (travelers == NULL) {
         printf("Error: Failed to create travelers array\n");
