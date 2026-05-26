@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L //in order for kill to work in c11
 #include "simulation.h"
 #include "vizGraph.h"
 
@@ -7,18 +7,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const Color simBgCol = (Color){18, 18, 24, 255};
-
-typedef struct {
-    int currentEdgeIndex;
-    int currentStep;
-    float timer;
-    float waitTimer;
-    bool isWaitingAtNode;
-    bool finished;
-    Color color;
-    bool signalSent;
-} TravelerState;
 
 static int getEdgeWeight(Graph *graph, int src, int dst) {
     Edge *curr = graph->vertices[src].adj;
@@ -45,7 +33,7 @@ static Vector2 getEntityPosition(Vector2 from, Vector2 to, int step, int totalSt
 
 static Color getRandomColor(int index) {
     Color colors[] = {
-        RED, GREEN, BLUE, ORANGE, PURPLE, PINK, LIME, GOLD, SKYBLUE, MAROON, BEIGE, MAGENTA
+        RED, GREEN, ORANGE, PURPLE, PINK, LIME, GOLD, MAROON, BEIGE, MAGENTA
     };
     return colors[index % (sizeof(colors) / sizeof(Color))];
 }

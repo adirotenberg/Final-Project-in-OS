@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L //in order for kill to work in c11
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -9,6 +9,7 @@
 #include "Graph.h"
 #include "simulation.h"
 
+void freeAll(InputData* data, bool freeResArr, DijkstraRes ** resArr, int resAmount);
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -34,9 +35,7 @@ int main(int argc, char *argv[]) {
 
     if (resArr == NULL) {
         printf("Error: Failed to create res array\n");
-        freeGraph(data->graph);
-        free(data->travelers);
-        free(data);
+        freeAll(data, false, NULL, 0);
         exit(EXIT_FAILURE);
     }
 
@@ -51,14 +50,7 @@ int main(int argc, char *argv[]) {
         if (res == NULL) {
             printf("Dijkstra failed.\n");
             // Cleanup previous results
-            for (int j = 0; j < i; j++) {
-                free(resArr[j]->path);
-                free(resArr[j]);
-            }
-            free(resArr);
-            freeGraph(data->graph);
-            free(data->travelers);
-            free(data);
+            freeAll(data, true, resArr, i);
             return 1;
         }
 
@@ -70,14 +62,7 @@ int main(int argc, char *argv[]) {
 
     if (pids == NULL) {
         printf("Error: Failed to create pid_t array\n");
-        for (int i = 0; i < data->numOfTravelers; i++) {
-            free(resArr[i]->path);
-            free(resArr[i]);
-        }
-        free(resArr);
-        freeGraph(data->graph);
-        free(data->travelers);
-        free(data);
+        freeAll(data, true, resArr, data->numOfTravelers);
         exit(EXIT_FAILURE);
     }
 
@@ -89,6 +74,8 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < i; j++) {
                 kill(pids[j], SIGKILL);
             }
+            freeAll(data, true, resArr, data->numOfTravelers);
+            free(pids);
             exit(EXIT_FAILURE);
         }
 
@@ -103,10 +90,7 @@ int main(int argc, char *argv[]) {
         pids[i] = pid;
     }
 
-
-#ifndef DIJKSTRA_ONLY
     simulation(data, resArr, pids, data->numOfTravelers);
-#endif
 
     // Wait for all children
     for (int i = 0; i < data->numOfTravelers; i++) {
@@ -115,16 +99,31 @@ int main(int argc, char *argv[]) {
     }
 
     // cleanup
-    for (int i = 0; i < data->numOfTravelers; i++) {
-        free(resArr[i]->path);
-        free(resArr[i]);
-    }
-    free(resArr);
+    freeAll(data, true, resArr, data->numOfTravelers);
     free(pids);
 
-    freeGraph(data->graph);
-    free(data->travelers);
-    free(data);
-
     return 0;
+}
+
+void freeAll(InputData* data, bool freeResArr, DijkstraRes ** resArr, int resAmount)
+{
+    if (data == NULL) return;
+
+    if (freeResArr && resArr != NULL)
+    {
+        for (int j = 0; j < resAmount; j++) {
+            if (resArr[j] != NULL) {
+                free(resArr[j]->path);
+                free(resArr[j]);
+            }
+        }
+        free(resArr);
+    }
+    if (data->graph != NULL) {
+        freeGraph(data->graph);
+    }
+    if (data->travelers != NULL) {
+        free(data->travelers);
+    }
+    free(data);
 }

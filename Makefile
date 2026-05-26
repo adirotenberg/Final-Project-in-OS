@@ -17,12 +17,6 @@ INPUT_FILE ?= input.txt
 
 all: milestone4
 
-milestone1: dijkstra
-
-milestone2: $(TARGET)
-
-milestone3: $(TARGET)
-
 milestone4: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -31,19 +25,10 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) -c $< -o $@
 
-dijkstra: dijkstra.o Graph.o DijkstraRes.o MinHeap.o
-	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) dijkstra.o Graph.o DijkstraRes.o MinHeap.o -o dijkstra $(LIBS)
-
-dijkstra.o: main.c Graph.h DijkstraRes.h Node.h Edge.h InputData.h MinHeap.h
-	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) -DDIJKSTRA_ONLY -c main.c -o dijkstra.o
-
 clean:
-	rm -f *.o $(TARGET) dijkstra
+	rm -f *.o $(TARGET)
 
 run: $(TARGET)
 	./$(TARGET) $(INPUT_FILE)
 
-run-m1: dijkstra
-	./dijkstra $(INPUT_FILE)
-
-.PHONY: all milestone1 milestone2 milestone3 milestone4 clean run run-m1
+.PHONY: all milestone4 clean run

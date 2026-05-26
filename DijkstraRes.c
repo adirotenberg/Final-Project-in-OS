@@ -40,6 +40,14 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
 
     MinHeap *heap = createHeap(n * n);
 
+    if (heap == NULL) {
+        printf("Error: Failed to create heap");
+        free(dist);
+        free(parent);
+        free(visited);
+        return NULL;
+    }
+
     dist[src] = 0;
     insert(heap, src, 0);
 
@@ -88,6 +96,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
         free(dist);
         free(parent);
         free(visited);
+        freeHeap(heap);
         return NULL;
     }
 
@@ -108,6 +117,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
         free(parent);
         free(visited);
         free(temp);
+        freeHeap(heap);
         return NULL;
     }
 
@@ -124,6 +134,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
         free(visited);
         free(temp);
         free(path);
+        freeHeap(heap);
         return NULL;
     }
 

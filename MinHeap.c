@@ -4,7 +4,12 @@
 
 MinHeap *createHeap(int capacity) {
     MinHeap *h = malloc(sizeof(MinHeap));
+    if (h == NULL) return NULL;
     h->arr = malloc(sizeof(HeapNode) * capacity);
+    if (h->arr == NULL) {
+        free(h);
+        return NULL;
+    }
     h->size = 0;
     h->capacity = capacity;
     return h;
