@@ -6,6 +6,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
 
 
 static int getEdgeWeight(Graph *graph, int src, int dst) {
@@ -38,7 +40,7 @@ static Color getRandomColor(int index) {
     return colors[index % (sizeof(colors) / sizeof(Color))];
 }
 
-void simulation(InputData *data, DijkstraRes **dijkstra_res_arr, pid_t *pids, int numOfTravelers) {
+void simulation(InputData* data, int pipes[][2], pid_t* pids, int numOfTravelers){
 
     Graph *graph = data->graph;
 
@@ -61,6 +63,8 @@ void simulation(InputData *data, DijkstraRes **dijkstra_res_arr, pid_t *pids, in
         states[i].finished = false;
         states[i].color = getRandomColor(i);
         states[i].signalSent = false;
+        states[i].currentNode = data->travelers[i][0];
+        states[i].nextNode = -1;
     }
 
     bool isPlaying = false;
@@ -86,52 +90,78 @@ void simulation(InputData *data, DijkstraRes **dijkstra_res_arr, pid_t *pids, in
             }
         }
 
+
         if (isPlaying && !allFinished) {
-            allFinished = true;
+
             for (int i = 0; i < numOfTravelers; i++) {
-                DijkstraRes *res = dijkstra_res_arr[i];
-                if (states[i].finished) continue;
 
-                allFinished = false;
-
-                if (res->pathLength <= 1) {
-                    states[i].finished = true;
+                // if plane is free read first from pipe
+                if (states[i].finished || states[i].nextNode != -1 || states[i].isWaitingAtNode) {
                     continue;
                 }
 
+                TravelMessage msg;
+                ssize_t bytesRead = read(pipes[i][0], &msg, sizeof(TravelMessage));
+
+                if (bytesRead == sizeof(TravelMessage)) {
+                    states[i].currentNode = msg.currentNode;
+                    states[i].nextNode = msg.nextNode;
+                    states[i].finished = msg.finished;
+                    states[i].currentStep = 0;
+
+                    if (msg.finished) {
+                        printf("[PID=%d] arrived at node %d | DESTINATION\n",
+                               msg.pid, msg.currentNode);
+                        printf("[PID=%d] finished\n", msg.pid);
+                    } else {
+                        printf("[PID=%d] arrived at node %d | next node: %d\n",
+                               msg.pid, msg.currentNode, msg.nextNode);
+                    }
+                }
+            }
+
+            allFinished = true;
+
+            // moving the planes
+            for (int i = 0; i < numOfTravelers; i++) {
+
+                if (states[i].finished) {
+                    continue;
+                }
+
+                allFinished = false;
+
                 if (states[i].isWaitingAtNode) {
                     states[i].waitTimer += dt;
+
                     if (states[i].waitTimer >= 1.0f) {
                         states[i].waitTimer = 0.0f;
                         states[i].isWaitingAtNode = false;
                     }
-                } else {
-                    states[i].timer += dt;
 
-                    int src = res->path[states[i].currentEdgeIndex];
-                    int dst = res->path[states[i].currentEdgeIndex + 1];
-                    int weight = getEdgeWeight(graph, src, dst);
-
-                    if (states[i].timer >= 0.3f) {
-                        states[i].timer = 0.0f;
-                        states[i].currentStep++;
-
-                        if (states[i].currentStep >= weight) {
-                            states[i].currentStep = 0;
-                            states[i].currentEdgeIndex++;
-
-                            if (states[i].currentEdgeIndex >= res->pathLength - 1) {
-                                states[i].finished = true;
-                            } else {
-                                states[i].isWaitingAtNode = true;
-                            }
-                        }
-                    }
+                    continue;
                 }
 
-                if (states[i].finished && !states[i].signalSent) {
-                    kill(pids[i], SIGTERM);
-                    states[i].signalSent = true;
+                if (states[i].nextNode == -1) {
+                    continue;
+                }
+
+                states[i].timer += dt;
+
+                int src = states[i].currentNode;
+                int dst = states[i].nextNode;
+                int weight = getEdgeWeight(graph, src, dst);
+
+                if (states[i].timer >= 0.3f) {
+                    states[i].timer = 0.0f;
+                    states[i].currentStep++;
+
+                    if (states[i].currentStep >= weight) {
+                        states[i].currentNode = states[i].nextNode;
+                        states[i].nextNode = -1;
+                        states[i].currentStep = 0;
+                        states[i].isWaitingAtNode = true;
+                    }
                 }
             }
         }
@@ -165,30 +195,40 @@ void simulation(InputData *data, DijkstraRes **dijkstra_res_arr, pid_t *pids, in
         }
 
         for (int i = 0; i < numOfTravelers; i++) {
-            DijkstraRes *res = dijkstra_res_arr[i];
-            if (res->pathLength > 0) {
-                Vector2 entityPos;
+            Vector2 entityPos;
 
-                if (states[i].finished || res->pathLength == 1) {
-                    int lastNode = res->path[res->pathLength - 1];
-                    entityPos = pos[lastNode];
-                } else {
-                    int src = res->path[states[i].currentEdgeIndex];
-                    int dst = res->path[states[i].currentEdgeIndex + 1];
-                    int weight = getEdgeWeight(graph, src, dst);
+            if (states[i].finished || states[i].nextNode == -1) {
+                entityPos = pos[states[i].currentNode];
+            } else {
+                int src = states[i].currentNode;
+                int dst = states[i].nextNode;
+                int weight = getEdgeWeight(graph, src, dst);
 
-                    entityPos = getEntityPosition(pos[src], pos[dst], states[i].currentStep, weight);
-                }
+                entityPos = getEntityPosition(
+                        pos[src],
+                        pos[dst],
+                        states[i].currentStep,
+                        weight
+                );
+            }
 
-                DrawTexturePro(
+            if (!states[i].finished && states[i].nextNode != -1) {
+                DrawLineEx(
+                        pos[states[i].currentNode],
+                        pos[states[i].nextNode],
+                        5.0f,
+                        states[i].color
+                );
+            }
+
+            DrawTexturePro(
                     plane,
                     (Rectangle){0, 0, plane.width, plane.height},
                     (Rectangle){entityPos.x, entityPos.y, 42, 42},
                     (Vector2){21, 21},
                     0.0f,
                     states[i].color
-                );
-            }
+            );
         }
 
         if (allFinished) {

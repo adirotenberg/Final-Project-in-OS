@@ -73,3 +73,18 @@ Extended the simulation to support multiple simultaneous passengers using OS pro
 - **Child Processes:** Each traveler runs in a separate process, prints `[PID] started` on creation, and remains active until signaled by the parent.
 - **Parallel Simulation:** All passengers move simultaneously on the screen, with the parent waiting for all processes to terminate before exiting.
 - **Extended Input:** Support for multiple travelers with individual source and destination nodes.
+
+### Milestone 5: Inter-Process Communication (IPC)
+
+Extended the simulation by making each traveler process autonomous. Instead of receiving a precomputed route from the parent process, every child process computes its own shortest path using Dijkstra's algorithm and reports its progress to the parent through IPC.
+
+- **IPC Mechanism:** Implemented using **pipes**, providing a simple and efficient communication channel between child and parent processes.
+- **Child Processes:** Independently compute their shortest path and send route progress updates whenever they arrive at a new node.
+- **Parent Process:** Receives updates from all children, prints execution logs to the terminal, and updates the GUI according to the received messages.
+- **Event Logging:** The parent reports traveler progress in the format: [PID=XXXX] arrived at node X | next node: Y , and announces destination arrival and process completion.
+- **Decoupled Architecture:** Route computation is no longer performed by the parent process. Children are responsible for path calculation and status reporting, while the parent focuses solely on visualization and coordination.
+
+#### Why Pipes?
+
+Pipes were selected because communication in this milestone is naturally **one-directional** (child → parent) and **message-based**. 
+Each traveler only needs to send progress notifications to the parent process. Using pipes avoids the additional synchronization complexity required by shared memory solutions (such as mutexes or semaphores) while providing a clean and reliable IPC mechanism.

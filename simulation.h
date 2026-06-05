@@ -16,8 +16,19 @@ typedef struct {
     bool finished;
     Color color;
     bool signalSent;
+
+    int currentNode;
+    int nextNode;
 } TravelerState;
 
-void simulation(InputData *data, DijkstraRes **dijkstra_res_arr, pid_t *pids, int numOfTravelers);
+typedef struct {
+    pid_t pid;
+    int travelerIndex;
+    int currentNode;
+    int nextNode;
+    int finished;
+} TravelMessage;
+
+void simulation(InputData* data, int pipes[][2], pid_t* pids, int numOfTravelers);
 
 #endif //PROJECTOS_SIMULATION_H
