@@ -29,6 +29,6 @@ typedef struct {
     int finished;
 } TravelMessage;
 
-void simulation(InputData* data, int pipes[][2], pid_t* pids, int numOfTravelers);
+void simulation(InputData* data, int pipes[][2], int numOfTravelers);
 
 #endif //PROJECTOS_SIMULATION_H

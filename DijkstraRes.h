@@ -12,6 +12,6 @@ typedef struct DijkstraRes {
 }DijkstraRes;
 
 DijkstraRes *dijkstra(Graph *graph, int src, int dst);
-void printPath(DijkstraRes *res);
+void freeDijkstraRes(DijkstraRes *res);
 
 #endif //PROJECTOS_DIJKSTRA_H

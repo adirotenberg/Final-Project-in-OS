@@ -15,9 +15,9 @@ LIBS = -lm
 
 INPUT_FILE ?= input.txt
 
-all: milestone4
+all: milestone5
 
-milestone4: $(TARGET)
+milestone5: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) $(OBJS) $(RAYLIB_LIBS) -o $(TARGET)
@@ -31,4 +31,4 @@ clean:
 run: $(TARGET)
 	./$(TARGET) $(INPUT_FILE)
 
-.PHONY: all milestone4 clean run
+.PHONY: all milestone5 clean run

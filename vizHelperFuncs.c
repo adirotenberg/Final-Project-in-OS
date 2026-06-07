@@ -1,5 +1,38 @@
 #include "vizHelperFuncs.h"
 
+/* Get the weight of the edge from the graph data according to the src and destination nodes of the edge*/
+int getEdgeWeight(Graph *graph, int src, int dst) {
+    Edge *curr = graph->vertices[src].adj;
+
+    while (curr != NULL) {
+        if (curr->dst == dst) {
+            return curr->weight;
+        }
+        curr = curr->next;
+    }
+
+    return 1;
+}
+
+/* Get the position of a plane */
+Vector2 getEntityPosition(Vector2 from, Vector2 to, int step, int totalSteps) {
+    float t = (float) step / (float) totalSteps;
+
+    Vector2 pos;
+    pos.x = from.x + (to.x - from.x) * t;
+    pos.y = from.y + (to.y - from.y) * t;
+
+    return pos;
+}
+
+/* Get a random color out of a given array of colors, specific of to an index*/
+Color getRandomColor(int index) {
+    Color colors[] = {
+        RED, GREEN, ORANGE, PURPLE, PINK, LIME, GOLD, MAROON, BEIGE, MAGENTA
+    };
+    return colors[index % (sizeof(colors) / sizeof(Color))];
+}
+
 /* Rotate vector (x,y) by angle θ */
 static Vector2 rotate2(float x, float y, float theta) {
     return (Vector2){ x * cosf(theta) - y * sinf(theta),

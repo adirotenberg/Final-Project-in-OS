@@ -7,40 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <errno.h>
 
-
-static int getEdgeWeight(Graph *graph, int src, int dst) {
-    Edge *curr = graph->vertices[src].adj;
-
-    while (curr != NULL) {
-        if (curr->dst == dst) {
-            return curr->weight;
-        }
-        curr = curr->next;
-    }
-
-    return 1;
-}
-
-static Vector2 getEntityPosition(Vector2 from, Vector2 to, int step, int totalSteps) {
-    float t = (float) step / (float) totalSteps;
-
-    Vector2 pos;
-    pos.x = from.x + (to.x - from.x) * t;
-    pos.y = from.y + (to.y - from.y) * t;
-
-    return pos;
-}
-
-static Color getRandomColor(int index) {
-    Color colors[] = {
-        RED, GREEN, ORANGE, PURPLE, PINK, LIME, GOLD, MAROON, BEIGE, MAGENTA
-    };
-    return colors[index % (sizeof(colors) / sizeof(Color))];
-}
-
-void simulation(InputData* data, int pipes[][2], pid_t* pids, int numOfTravelers){
+void simulation(InputData* data, int pipes[][2], int numOfTravelers){
 
     Graph *graph = data->graph;
 

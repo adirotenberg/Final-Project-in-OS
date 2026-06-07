@@ -28,6 +28,4 @@ void freeGraph(Graph *graph);
 
 bool doesEdgeExists(Graph *graph, int src, int dst);
 
-void printGraph(Graph *graph);
-
 #endif //PROJECTOS_GRAPH_H

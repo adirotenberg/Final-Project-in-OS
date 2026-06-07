@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "Graph.h"
 
 /* ── constants ─────────────────────────────────────────────────────────────*/
 #define MAX_VERTICES   15
@@ -19,5 +20,8 @@
 
 void DrawEdge(Vector2 from, Vector2 to, int weight, bool curved, Color lineCol, Color textCol);
 void DrawSelfLoop(Vector2 pos, int weight, Color lineCol, Color textCol);
+int getEdgeWeight(Graph *graph, int src, int dst);
+Vector2 getEntityPosition(Vector2 from, Vector2 to, int step, int totalSteps);
+Color getRandomColor(int index);
 
 #endif //PROJECTOS_VIZHELPERFUNCS_H
