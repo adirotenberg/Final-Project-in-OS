@@ -3,6 +3,7 @@
 ## Building and Running
 
 ```bash
+make milestone6   # Build Node Access Synchronization Simulation
 make milestone5   # Build IPC Multi-Process Traffic Simulation
 
 # Note: The following milestones are not supported in this version
@@ -89,3 +90,17 @@ Extended the simulation by making each traveler process autonomous. Instead of r
 
 Pipes were selected because communication in this milestone is naturally **one-directional** (child → parent) and **message-based**. 
 Each traveler only needs to send progress notifications to the parent process. Using pipes avoids the additional synchronization complexity required by shared memory solutions (such as mutexes or semaphores) while providing a clean and reliable IPC mechanism.
+
+### Milestone 6: Node Access Synchronization
+
+Implemented a robust, process-level synchronization mechanism to ensure that no more than one plane occupies a node at any given time.
+
+- **Synchronization Mechanism:** Utilizes **POSIX Named Semaphores** (`sem_open`, `sem_wait`, `sem_post`). Each node in the graph is associated with a unique semaphore (e.g., `/node_0`, `/node_1`).
+- **Critical Section:** The logic for "staying in a node" is defined as a critical section within the child processes. A traveler process must successfully call `sem_wait` on the target node's semaphore before entering.
+- **Process-Level Sleep:** Once a process enters the critical section (acquires the semaphore), it calls `sleep(1)` to simulate the mandatory dwell time. This ensures that the traveler process is genuinely occupied and blocking others from the resource.
+- **Event-Driven IPC:** The child processes report their synchronization state to the parent via pipes using a structured event system:
+    - `EVENT_WAITING`: Child is blocked at `sem_wait` (displayed as **Yellow** "WAITING" in GUI).
+    - `EVENT_ENTERING`: Child has acquired the lock and is inside the node.
+    - `EVENT_LEAVING`: Child has released the lock and is moving to the next edge.
+- **No Starvation:** The use of standard POSIX semaphores ensures that waiting processes are handled fairly by the OS scheduler, preventing starvation.
+- **Visual Feedback:** The GUI accurately reflects these OS-level states, providing a real-time visualization of process synchronization and critical section management.

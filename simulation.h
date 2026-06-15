@@ -17,6 +17,7 @@ typedef struct {
     bool finished;
     Color color;
     bool signalSent;
+    pid_t pid;
 
     int currentNode;
     int nextNode;
