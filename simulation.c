@@ -28,18 +28,32 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
         states[i].timer = 0.0f;
         states[i].waitTimer = 0.0f;
         states[i].isWaitingAtNode = false;
-        states[i].isQueueingOutside = true; 
+        states[i].isQueueingOutside = false; 
         states[i].finished = false;
         states[i].color = getRandomColor(i);
         states[i].signalSent = false;
         states[i].pid = 0; 
         states[i].currentNode = data->travelers[i][0];
-        states[i].nextNode = states[i].currentNode; 
+        states[i].nextNode = -1;
     }
 
     for (int v = 0; v < graph->numOfVertices; v++) {
         pthread_mutex_init(&(graph->vertices[v].node_mutex), NULL);
         graph->vertices[v].occupying_traveler_id = -1;
+    }
+
+    // Initial Node Entry: attempt to lock the starting node for everyone
+    for (int i = 0; i < numOfTravelers; i++) {
+        int startNode = states[i].currentNode;
+        if (pthread_mutex_trylock(&(graph->vertices[startNode].node_mutex)) == 0) {
+            // Success: Occupy the node and start the 1s dwell timer
+            graph->vertices[startNode].occupying_traveler_id = i;
+            states[i].isWaitingAtNode = true;
+        } else {
+            // Failure: Node is already occupied (someone else started there), wait outside
+            states[i].isQueueingOutside = true;
+            states[i].nextNode = startNode;
+        }
     }
 
     bool isPlaying = false;
