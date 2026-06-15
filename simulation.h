@@ -13,6 +13,7 @@ typedef struct {
     float timer;
     float waitTimer;
     bool isWaitingAtNode;
+    bool isQueueingOutside;
     bool finished;
     Color color;
     bool signalSent;
