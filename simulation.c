@@ -27,6 +27,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
         states[i].currentStep = 0;
         states[i].timer = 0.0f;
         states[i].waitTimer = 0.0f;
+        states[i].edgeProgress = 0.0f;
         states[i].isWaitingAtNode = false;
         states[i].isQueueingOutside = false; 
         states[i].finished = false;
@@ -93,6 +94,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
 
                 if (bytesRead == sizeof(TravelMessage)) {
                     states[i].currentStep = 0;
+                    states[i].edgeProgress = 0.0f;
                     states[i].pid = msg.pid; 
                     
                     if (msg.finished) {
@@ -137,6 +139,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                         }
                         states[i].nextNode = -1;
                         states[i].currentStep = 0;
+                        states[i].edgeProgress = 0.0f;
 
                         if (states[i].finished) {
                             // If this is the final destination, release immediately and vanish
@@ -179,27 +182,29 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                     continue;
                 }
 
-                states[i].timer += dt;
-
                 int src = states[i].currentNode;
                 int dst = states[i].nextNode;
                 int weight = getEdgeWeight(graph, src, dst);
 
-                if (states[i].timer >= 0.3f) {
-                    states[i].timer = 0.0f;
-                    states[i].currentStep++;
+                // Smooth movement based on edge weight
+                float travelDuration = weight * 0.3f;
+                states[i].edgeProgress += dt / travelDuration;
 
-                    // Once we have moved at least one step, we are visibly leaving the node.
-                    // Release the previous node lock now.
-                    if (states[i].currentStep == 1) {
+                // Release the previous node lock once we start moving
+                if (states[i].edgeProgress > 0.0f && states[i].edgeProgress < 1.0f) {
+                    if (graph->vertices[src].occupying_traveler_id == i) {
                         graph->vertices[src].occupying_traveler_id = -1;
                         pthread_mutex_unlock(&(graph->vertices[src].node_mutex));
                     }
+                }
 
-                    if (states[i].currentStep >= weight) {
-                        states[i].isQueueingOutside = true;
-                        printf("[PID=%d] Reached end of edge to Node %d. Waiting to enter...\n", states[i].pid, dst);
-                    }
+                // Capping Glide at 90%:
+                // We stop the glide slightly before the center and transition to queueing.
+                // This ensures we never 'touch' the node center until we have the lock.
+                if (states[i].edgeProgress >= 0.9f) {
+                    states[i].edgeProgress = 0.9f;
+                    states[i].isQueueingOutside = true;
+                    printf("[PID=%d] Approaching Node %d. Waiting for entry permission...\n", states[i].pid, dst);
                 }
             }
         }
@@ -238,43 +243,41 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
             }
             Vector2 entityPos;
 
-            if (states[i].finished || (states[i].nextNode == -1 && !states[i].isQueueingOutside)) {
-                entityPos = pos[states[i].currentNode];
-            } else {
+            // Priority: If queueing, ALWAYS show outside
+            if (states[i].isQueueingOutside) {
                 int src = states[i].currentNode;
                 int dst = states[i].nextNode;
-                int weight = getEdgeWeight(graph, src, dst);
-
-                if (states[i].isQueueingOutside) {
-                    Vector2 from = pos[src];
-                    Vector2 to = pos[dst];
-                    
-                    // Visual Queue Offset:
-                    int queuePos = 0;
-                    for (int k = 0; k < i; k++) {
-                        if (!states[k].signalSent && states[k].isQueueingOutside && states[k].nextNode == dst) {
-                            queuePos++;
-                        }
+                Vector2 from = pos[src];
+                Vector2 to = pos[dst];
+                
+                int queuePos = 0;
+                for (int k = 0; k < i; k++) {
+                    if (!states[k].signalSent && states[k].isQueueingOutside && states[k].nextNode == dst) {
+                        queuePos++;
                     }
-
-                    if (src == dst) {
-                        // Starting node: Offset from the node center
-                        entityPos = (Vector2){ to.x - 35 * (queuePos + 1), to.y - 35 * (queuePos + 1) };
-                    } else {
-                        // Edge arrival: Offset back along the edge
-                        float t = 0.9f - 0.08f * queuePos;
-                        if (t < 0.1f) t = 0.1f;
-                        entityPos.x = from.x + (to.x - from.x) * t;
-                        entityPos.y = from.y + (to.y - from.y) * t;
-                    }
-                } else {
-                    entityPos = getEntityPosition(
-                            pos[src],
-                            pos[dst],
-                            states[i].currentStep,
-                            weight
-                    );
                 }
+
+                if (src == dst) {
+                    entityPos = (Vector2){ to.x - 35 * (queuePos + 1), to.y - 35 * (queuePos + 1) };
+                } else {
+                    float t = 0.9f - 0.08f * queuePos;
+                    if (t < 0.1f) t = 0.1f;
+                    entityPos.x = from.x + (to.x - from.x) * t;
+                    entityPos.y = from.y + (to.y - from.y) * t;
+                }
+            }
+            // Else if waiting inside or stationary at destination
+            else if (states[i].isWaitingAtNode || states[i].finished || states[i].nextNode == -1) {
+                entityPos = pos[states[i].currentNode];
+            } 
+            // Else gliding along an edge
+            else {
+                int src = states[i].currentNode;
+                int dst = states[i].nextNode;
+                Vector2 from = pos[src];
+                Vector2 to = pos[dst];
+                entityPos.x = from.x + (to.x - from.x) * states[i].edgeProgress;
+                entityPos.y = from.y + (to.y - from.y) * states[i].edgeProgress;
             }
 
             if (!states[i].finished && states[i].nextNode != -1) {

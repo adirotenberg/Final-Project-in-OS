@@ -4,13 +4,13 @@
 
 ```bash
 make milestone6   # Build Node Access Synchronization Simulation
-make milestone5   # Build IPC Multi-Process Traffic Simulation
 
 # Note: The following milestones are not supported in this version
 make milestone1   # Build Dijkstra (CLI)
 make milestone2   # Build Graph Visualization
 make milestone3   # Build Traffic Animation
 make milestone4   # Build Multi-Process Traffic Simulation
+make milestone5   # Build IPC Multi-Process Traffic Simulation
 
 make clean        # Remove compiled files
 ```

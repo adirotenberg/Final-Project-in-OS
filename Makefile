@@ -17,8 +17,6 @@ INPUT_FILE ?= input.txt
 
 all: milestone6
 
-milestone5: milestone6
-
 milestone6: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -33,4 +31,4 @@ clean:
 run: $(TARGET)
 	./$(TARGET) $(INPUT_FILE)
 
-.PHONY: all milestone5 milestone6 clean run
+.PHONY: all milestone6 clean run

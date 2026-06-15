@@ -1,10 +1,8 @@
 #ifndef PROJECTOS_SIMULATION_H
 #define PROJECTOS_SIMULATION_H
 
-#include "DijkstraRes.h"
 #include "InputData.h"
 #include "vizGraph.h"
-#include <sys/types.h>
 static const Color simBgCol = (Color){18, 18, 24, 255};
 
 typedef struct {
@@ -12,6 +10,7 @@ typedef struct {
     int currentStep;
     float timer;
     float waitTimer;
+    float edgeProgress; // Added for smooth animation
     bool isWaitingAtNode;
     bool isQueueingOutside;
     bool finished;
