@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L //in order for kill to work in c11
+#define _POSIX_C_SOURCE 200809L
 #include "simulation.h"
 #include "vizGraph.h"
 
@@ -27,12 +27,34 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
         states[i].currentStep = 0;
         states[i].timer = 0.0f;
         states[i].waitTimer = 0.0f;
+        states[i].edgeProgress = 0.0f;
         states[i].isWaitingAtNode = false;
+        states[i].isQueueingOutside = false; 
         states[i].finished = false;
         states[i].color = getRandomColor(i);
         states[i].signalSent = false;
+        states[i].pid = 0; 
         states[i].currentNode = data->travelers[i][0];
         states[i].nextNode = -1;
+    }
+
+    for (int v = 0; v < graph->numOfVertices; v++) {
+        pthread_mutex_init(&(graph->vertices[v].node_mutex), NULL);
+        graph->vertices[v].occupying_traveler_id = -1;
+    }
+
+    // Initial Node Entry: attempt to lock the starting node for everyone
+    for (int i = 0; i < numOfTravelers; i++) {
+        int startNode = states[i].currentNode;
+        if (pthread_mutex_trylock(&(graph->vertices[startNode].node_mutex)) == 0) {
+            // Success: Occupy the node and start the 1s dwell timer
+            graph->vertices[startNode].occupying_traveler_id = i;
+            states[i].isWaitingAtNode = true;
+        } else {
+            // Failure: Node is already occupied (someone else started there), wait outside
+            states[i].isQueueingOutside = true;
+            states[i].nextNode = startNode;
+        }
     }
 
     bool isPlaying = false;
@@ -42,7 +64,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
 
     SetTraceLogLevel(LOG_NONE);
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
-    InitWindow(SCREEN_W, SCREEN_H, "Traffic Simulation - Milestone 3");
+    InitWindow(SCREEN_W, SCREEN_H, "Traffic Simulation - Milestone 6");
     Texture2D worldMap = LoadTexture("assets/world_map.png");
     Texture2D plane = LoadTexture("assets/plane.png");
     SetTargetFPS(60);
@@ -55,16 +77,15 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
 
             if (CheckCollisionPointRec(mouse, playButton)) {
                 isPlaying = !isPlaying;
+                if (isPlaying) printf("Simulation started!\n");
             }
         }
-
 
         if (isPlaying && !allFinished) {
 
             for (int i = 0; i < numOfTravelers; i++) {
 
-                // if plane is free read first from pipe
-                if (states[i].finished || states[i].nextNode != -1 || states[i].isWaitingAtNode) {
+                if (states[i].signalSent || states[i].nextNode != -1 || states[i].isWaitingAtNode || states[i].isQueueingOutside) {
                     continue;
                 }
 
@@ -72,32 +93,68 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                 ssize_t bytesRead = read(pipes[i][0], &msg, sizeof(TravelMessage));
 
                 if (bytesRead == sizeof(TravelMessage)) {
-                    states[i].currentNode = msg.currentNode;
-                    states[i].nextNode = msg.nextNode;
-                    states[i].finished = msg.finished;
                     states[i].currentStep = 0;
-
+                    states[i].edgeProgress = 0.0f;
+                    states[i].pid = msg.pid; 
+                    
                     if (msg.finished) {
-                        printf("[PID=%d] arrived at node %d | DESTINATION\n",
-                               msg.pid, msg.currentNode);
-                        printf("[PID=%d] finished\n", msg.pid);
+                        // Check if we are already at the destination node
+                        if (msg.currentNode == states[i].currentNode && states[i].nextNode == -1) {
+                            states[i].finished = true;
+                            // RELEASE IMMEDIATELY because we reached the destination
+                            int nodeToRelease = states[i].currentNode;
+                            graph->vertices[nodeToRelease].occupying_traveler_id = -1;
+                            pthread_mutex_unlock(&(graph->vertices[nodeToRelease].node_mutex));
+                            states[i].signalSent = true;
+                            printf("Traveler %d finished at destination node %d and released it.\n", i, nodeToRelease);
+                        } else {
+                            states[i].nextNode = msg.currentNode; 
+                            states[i].finished = true;
+                            states[i].isQueueingOutside = true;
+                        }
                     } else {
-                        printf("[PID=%d] arrived at node %d | next node: %d\n",
-                               msg.pid, msg.currentNode, msg.nextNode);
+                        states[i].nextNode = msg.nextNode;
                     }
                 }
             }
 
             allFinished = true;
 
-            // moving the planes
             for (int i = 0; i < numOfTravelers; i++) {
 
-                if (states[i].finished) {
-                    continue;
+                if (states[i].signalSent) {
+                    continue; 
                 }
 
                 allFinished = false;
+
+                if (states[i].isQueueingOutside) {
+                    int targetNode = states[i].nextNode;
+                    if (pthread_mutex_trylock(&(graph->vertices[targetNode].node_mutex)) == 0) {
+                        graph->vertices[targetNode].occupying_traveler_id = i;
+                        states[i].isQueueingOutside = false;
+                        
+                        if (states[i].currentNode != targetNode) {
+                            states[i].currentNode = targetNode;
+                        }
+                        states[i].nextNode = -1;
+                        states[i].currentStep = 0;
+                        states[i].edgeProgress = 0.0f;
+
+                        if (states[i].finished) {
+                            // If this is the final destination, release immediately and vanish
+                            graph->vertices[targetNode].occupying_traveler_id = -1;
+                            pthread_mutex_unlock(&(graph->vertices[targetNode].node_mutex));
+                            states[i].signalSent = true;
+                            printf("Traveler %d reached final destination and left the system.\n", i);
+                        } else {
+                            // Intermediate node: must wait for 1 second
+                            states[i].isWaitingAtNode = true;
+                            printf("Traveler %d acquired the lock for Node %d and entered.\n", i, targetNode);
+                        }
+                    }
+                    continue;
+                }
 
                 if (states[i].isWaitingAtNode) {
                     states[i].waitTimer += dt;
@@ -105,6 +162,17 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                     if (states[i].waitTimer >= 1.0f) {
                         states[i].waitTimer = 0.0f;
                         states[i].isWaitingAtNode = false;
+
+                        // Only release and vanish if finished.
+                        // If not finished, we keep the lock until we start moving to the next node.
+                        if (states[i].finished) {
+                            int nodeToRelease = states[i].currentNode;
+                            graph->vertices[nodeToRelease].occupying_traveler_id = -1;
+                            pthread_mutex_unlock(&(graph->vertices[nodeToRelease].node_mutex));
+                            
+                            states[i].signalSent = true;
+                            printf("Traveler %d finished and left the system.\n", i);
+                        }
                     }
 
                     continue;
@@ -114,22 +182,29 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                     continue;
                 }
 
-                states[i].timer += dt;
-
                 int src = states[i].currentNode;
                 int dst = states[i].nextNode;
                 int weight = getEdgeWeight(graph, src, dst);
 
-                if (states[i].timer >= 0.3f) {
-                    states[i].timer = 0.0f;
-                    states[i].currentStep++;
+                // Smooth movement based on edge weight
+                float travelDuration = weight * 0.3f;
+                states[i].edgeProgress += dt / travelDuration;
 
-                    if (states[i].currentStep >= weight) {
-                        states[i].currentNode = states[i].nextNode;
-                        states[i].nextNode = -1;
-                        states[i].currentStep = 0;
-                        states[i].isWaitingAtNode = true;
+                // Release the previous node lock once we start moving
+                if (states[i].edgeProgress > 0.0f && states[i].edgeProgress < 1.0f) {
+                    if (graph->vertices[src].occupying_traveler_id == i) {
+                        graph->vertices[src].occupying_traveler_id = -1;
+                        pthread_mutex_unlock(&(graph->vertices[src].node_mutex));
                     }
+                }
+
+                // Capping Glide at 90%:
+                // We stop the glide slightly before the center and transition to queueing.
+                // This ensures we never 'touch' the node center until we have the lock.
+                if (states[i].edgeProgress >= 0.9f) {
+                    states[i].edgeProgress = 0.9f;
+                    states[i].isQueueingOutside = true;
+                    printf("[PID=%d] Approaching Node %d. Waiting for entry permission...\n", states[i].pid, dst);
                 }
             }
         }
@@ -148,7 +223,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
 
         DrawRectangle(0, 0, SCREEN_W, SCREEN_H, (Color){0, 0, 0, 70});
 
-        DrawText("Traffic Simulation", 12, 12, 20, (Color){160, 160, 180, 255});
+        DrawText("Traffic Simulation - Milestone 6", 12, 12, 20, (Color){160, 160, 180, 255});
 
         drawEdges(graph, pos, has_edge);
         drawVertices(graph->numOfVertices, pos);
@@ -163,21 +238,46 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
         }
 
         for (int i = 0; i < numOfTravelers; i++) {
+            if (states[i].signalSent) {
+                continue; 
+            }
             Vector2 entityPos;
 
-            if (states[i].finished || states[i].nextNode == -1) {
-                entityPos = pos[states[i].currentNode];
-            } else {
+            // Priority: If queueing, ALWAYS show outside
+            if (states[i].isQueueingOutside) {
                 int src = states[i].currentNode;
                 int dst = states[i].nextNode;
-                int weight = getEdgeWeight(graph, src, dst);
+                Vector2 from = pos[src];
+                Vector2 to = pos[dst];
+                
+                int queuePos = 0;
+                for (int k = 0; k < i; k++) {
+                    if (!states[k].signalSent && states[k].isQueueingOutside && states[k].nextNode == dst) {
+                        queuePos++;
+                    }
+                }
 
-                entityPos = getEntityPosition(
-                        pos[src],
-                        pos[dst],
-                        states[i].currentStep,
-                        weight
-                );
+                if (src == dst) {
+                    entityPos = (Vector2){ to.x - 35 * (queuePos + 1), to.y - 35 * (queuePos + 1) };
+                } else {
+                    float t = 0.9f - 0.08f * queuePos;
+                    if (t < 0.1f) t = 0.1f;
+                    entityPos.x = from.x + (to.x - from.x) * t;
+                    entityPos.y = from.y + (to.y - from.y) * t;
+                }
+            }
+            // Else if waiting inside or stationary at destination
+            else if (states[i].isWaitingAtNode || states[i].finished || states[i].nextNode == -1) {
+                entityPos = pos[states[i].currentNode];
+            } 
+            // Else gliding along an edge
+            else {
+                int src = states[i].currentNode;
+                int dst = states[i].nextNode;
+                Vector2 from = pos[src];
+                Vector2 to = pos[dst];
+                entityPos.x = from.x + (to.x - from.x) * states[i].edgeProgress;
+                entityPos.y = from.y + (to.y - from.y) * states[i].edgeProgress;
             }
 
             if (!states[i].finished && states[i].nextNode != -1) {
@@ -189,13 +289,19 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                 );
             }
 
+            Color drawColor = states[i].color;
+            if (states[i].isQueueingOutside) {
+                drawColor = YELLOW;
+                DrawText("WAITING", (int)entityPos.x - 20, (int)entityPos.y - 35, 12, YELLOW);
+            }
+
             DrawTexturePro(
                     plane,
                     (Rectangle){0, 0, plane.width, plane.height},
                     (Rectangle){entityPos.x, entityPos.y, 42, 42},
                     (Vector2){21, 21},
                     0.0f,
-                    states[i].color
+                    drawColor
             );
         }
 
@@ -204,6 +310,10 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
         }
 
         EndDrawing();
+    }
+
+    for (int v = 0; v < graph->numOfVertices; v++) {
+        pthread_mutex_destroy(&(graph->vertices[v].node_mutex));
     }
 
     UnloadTexture(worldMap);

@@ -28,7 +28,7 @@ Vector2 getEntityPosition(Vector2 from, Vector2 to, int step, int totalSteps) {
 /* Get a random color out of a given array of colors, specific of to an index*/
 Color getRandomColor(int index) {
     Color colors[] = {
-        RED, GREEN, ORANGE, PURPLE, PINK, LIME, GOLD, MAROON, BEIGE, MAGENTA
+        RED, GREEN, PURPLE, PINK, LIME, GOLD, MAROON, BEIGE, MAGENTA
     };
     return colors[index % (sizeof(colors) / sizeof(Color))];
 }
