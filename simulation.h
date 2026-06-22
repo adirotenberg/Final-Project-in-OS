@@ -3,6 +3,10 @@
 
 #include "InputData.h"
 #include "vizGraph.h"
+
+#define FCFS 0
+#define PRIORITY 1
+
 static const Color simBgCol = (Color){18, 18, 24, 255};
 
 typedef struct {
@@ -30,6 +34,6 @@ typedef struct {
     int finished;
 } TravelMessage;
 
-void simulation(InputData* data, int pipes[][2], int numOfTravelers);
+void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, int ** waitingQueues, int * queuesLengths);
 
 #endif //PROJECTOS_SIMULATION_H

@@ -1,5 +1,6 @@
 #include "Graph.h"
-#define TRAVELER_FIELDS 2
+
+static void freeAll(Graph *graph, FILE *fp, int (*travelers)[TRAVELER_FIELDS]);
 
 InputData *readFile(const char *filename) {
     FILE *fp = fopen(filename, "r");
@@ -43,8 +44,7 @@ InputData *readFile(const char *filename) {
 
         if (scanRow != 3) {
             printf("Error: Invalid row format\n");
-            freeGraph(graph);
-            fclose(fp);
+            freeAll(graph, fp, NULL);
             return NULL;
         }
 
@@ -52,8 +52,7 @@ InputData *readFile(const char *filename) {
             dst < 0 || dst >= graph->numOfVertices ||
             weight < 0) {
             printf("Error: Invalid input\n");
-            freeGraph(graph);
-            fclose(fp);
+            freeAll(graph, fp, NULL);
             return NULL;
         }
 
@@ -62,15 +61,13 @@ InputData *readFile(const char *filename) {
         }
     }
 
-
     int numOfTravelers;
 
     int travelersNumScan = fscanf(fp, "%d", &numOfTravelers);
 
     if (travelersNumScan != 1) {
         printf("Error: Invalid travelers number row format\n");
-        freeGraph(graph);
-        fclose(fp);
+        freeAll(graph, fp, NULL);
         return NULL;
     }
 
@@ -78,45 +75,71 @@ InputData *readFile(const char *filename) {
 
     if (travelers == NULL) {
         printf("Error: Failed to create travelers array\n");
-        freeGraph(graph);
-        fclose(fp);
+        freeAll(graph, fp, NULL);
         return NULL;
     }
 
+    // Skip to the start of traveler lines by reading character-by-character until after the newline of travelersNumScan
+    int c;
+    while ((c = fgetc(fp)) != EOF && c != '\n');
+
     for (int i = 0; i < numOfTravelers; i++) {
+        char line[256];
+        // Read next non-empty, non-whitespace-only line
+        while (1) {
+            if (fgets(line, sizeof(line), fp) == NULL) {
+                printf("Error: Unexpected EOF while reading travelers\n");
+                freeAll(graph, fp, travelers);
+                return NULL;
+            }
+            // Check if line is empty or just whitespace
+            int only_whitespace = 1;
+            for (int k = 0; line[k] != '\0'; k++) {
+                if (line[k] != ' ' && line[k] != '\t' && line[k] != '\r' && line[k] != '\n') {
+                    only_whitespace = 0;
+                    break;
+                }
+            }
+            if (!only_whitespace) {
+                break;
+            }
+        }
+
         int dijkSrc;
         int dijkDst;
+        int priority = -1;
+        int scanRow = sscanf(line, "%d %d %d", &dijkSrc, &dijkDst, &priority);
 
-        int scanRow = fscanf(fp, "%d %d", &dijkSrc, &dijkDst);
-
-        if (scanRow != 2) {
-            printf("Error: Invalid row format\n");
-            freeGraph(graph);
-            free(travelers);
-            fclose(fp);
+        if (scanRow < 2) {
+            printf("Error: Invalid row format for traveler number #%d\n", i);
+            freeAll(graph, fp, travelers);
             return NULL;
         }
 
+        // If priority is not provided in the file, assign a default unique priority.
+        if (scanRow == 2 || priority == -1) {
+            priority = i + 1;
+        }
+
         if (dijkSrc < 0 || dijkSrc >= graph->numOfVertices ||
-            dijkDst < 0 || dijkDst >= graph->numOfVertices) {
-            freeGraph(graph);
-            free(travelers);
-            fclose(fp);
+            dijkDst < 0 || dijkDst >= graph->numOfVertices ||
+            priority < 1 || priority > numOfTravelers + 1
+            ) {
+            printf("Error: Invalid source/destination/priority (%d %d %d) for traveler number #%d\n", dijkSrc, dijkDst, priority, i);
+            freeAll(graph, fp, travelers);
             return NULL;
         }
 
         travelers[i][0] = dijkSrc;
         travelers[i][1] = dijkDst;
+        travelers[i][2] = priority;
     }
-
 
     InputData *inputData = malloc(sizeof(InputData));
 
     if (inputData == NULL) {
         printf("Error: Failed to create input data\n");
-        freeGraph(graph);
-        free(travelers);
-        fclose(fp);
+        freeAll(graph, fp, travelers);
         return NULL;
     }
 
@@ -223,4 +246,12 @@ bool doesEdgeExists(Graph *graph, int src, int dst) {
         currEdge = currEdge->next;
     }
     return false;
+}
+
+static void freeAll(Graph *graph, FILE *fp, int (*travelers)[TRAVELER_FIELDS]) {
+    freeGraph(graph);
+    fclose(fp);
+    if (travelers != NULL) {
+        free(travelers);
+    }
 }

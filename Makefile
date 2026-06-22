@@ -8,16 +8,17 @@ RAYLIB_LIB = $(RAYLIB_ROOT)/lib
 
 SRCS = main.c Graph.c DijkstraRes.c MinHeap.c vizHelperFuncs.c vizGraph.c simulation.c
 OBJS = $(SRCS:.c=.o)
-TARGET = sim
+TARGET = sim-schd
 
 RAYLIB_LIBS = -L$(RAYLIB_LIB) -lraylib -lm -lpthread -ldl -lrt -lX11
 LIBS = -lm
 
 INPUT_FILE ?= input.txt
+POLICY ?= fcfs
 
-all: milestone6
+all: milestone7
 
-milestone6: $(TARGET)
+milestone7: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) $(OBJS) $(RAYLIB_LIBS) -o $(TARGET)
@@ -26,9 +27,9 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -I$(RAYLIB_INCLUDE) -c $< -o $@
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o $(TARGET) sim
 
 run: $(TARGET)
-	./$(TARGET) $(INPUT_FILE)
+	./$(TARGET) $(POLICY) $(INPUT_FILE)
 
-.PHONY: all milestone6 clean run
+.PHONY: all milestone7 clean run

@@ -1,6 +1,6 @@
 #ifndef PROJECTOS_INPUTDATA_H
 #define PROJECTOS_INPUTDATA_H
-#define TRAVELER_FIELDS 2
+#define TRAVELER_FIELDS 3
 
 typedef struct {
     struct Graph *graph;

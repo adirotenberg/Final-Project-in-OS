@@ -6,20 +6,42 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <string.h>
 #include "DijkstraRes.h"
 #include "Graph.h"
 #include "simulation.h"
 
-void freeAll(InputData* data, pid_t *pids, int (*pipes)[2]);
+static void freeAll(InputData* data, pid_t *pids, int (*pipes)[2]);
 
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage: %s <input_file>\n", argv[0]);
+    const char *scheduler_policy = NULL;
+    const char *filename = NULL;
+
+    if (argc == 3) {
+        scheduler_policy = argv[1];
+        filename = argv[2];
+    } else if (argc == 4 && strcmp(argv[1], "-schd") == 0) {
+        scheduler_policy = argv[2];
+        filename = argv[3];
+    } else {
+        printf("Error: Invalid arguments.\n");
+        printf("Usage: %s <policy> <input_file>  OR  %s -schd <policy> <input_file>\n", argv[0], argv[0]);
         return 1;
     }
 
-    const char *filename = argv[1];
+    int schd;
+
+    if (strcmp(scheduler_policy, "fcfs") == 0) {
+        printf("Running FCFS scheduling simulation...\n");
+        schd = FCFS;
+    } else if (strcmp(scheduler_policy, "priority") == 0) {
+        printf("Running Priority scheduling simulation...\n");
+        schd = PRIORITY;
+    } else {
+        printf("Unknown policy: %s\n", scheduler_policy);
+        return 1;
+    }
 
     InputData *data = readFile(filename);
 
@@ -83,7 +105,7 @@ int main(int argc, char *argv[]) {
                 if (i != j) {
                     close(pipes[j][0]);
                     // if j < i, parent already closed pipes[j][1], so it's not inherited?
-                    // actually parent closes it AFTER fork. So child i inherits all pipes[0..i-1][0] (read ends) 
+                    // actually parent closes it AFTER fork. So child i inherits all pipes[0..i-1][0] (read ends)
                     // and all pipes[0..numOfTravelers-1][1] (write ends) that weren't closed yet.
                     // To be safe, child should close everything it doesn't need.
                 }
@@ -136,7 +158,26 @@ int main(int argc, char *argv[]) {
         fcntl(pipes[i][0], F_SETFL, O_NONBLOCK);
     }
 
-    simulation(data, pipes, data->numOfTravelers);
+    //create waiting queue for each node
+    int numOfVertices = data->graph->numOfVertices;
+    int ** waitingQueues = malloc(sizeof(int *) * numOfVertices);
+    int * queuesLengths = malloc(sizeof(int) * numOfVertices);
+    if (waitingQueues == NULL || queuesLengths == NULL) {
+        printf("Error: Failed to create waitingQueues/queuesLength array\n");
+        freeAll(data, pids, pipes);
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < numOfVertices; i++) {
+        queuesLengths[i] = 0;
+        waitingQueues[i] = malloc(sizeof(int) * data->numOfTravelers);
+        if (waitingQueues[i] == NULL) {
+            printf("Error: Failed to create waitingQueues array\n");
+            freeAll(data, pids, pipes);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    simulation(data, pipes, data->numOfTravelers, schd, waitingQueues, queuesLengths);
 
     // Wait for all children
     for (int i = 0; i < data->numOfTravelers; i++) {
@@ -148,13 +189,18 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < data->numOfTravelers; i++) {
         close(pipes[i][0]);
     }
-    
+
     freeAll(data, pids, pipes);
+    for (int i = 0; i < numOfVertices; i++) {
+        free(waitingQueues[i]);
+    }
+    free(waitingQueues);
+    free(queuesLengths);
 
     return 0;
 }
 
-void freeAll(InputData* data, pid_t *pids, int (*pipes)[2])
+static void freeAll(InputData* data, pid_t *pids, int (*pipes)[2])
 {
     if (data != NULL) {
         if (data->graph != NULL) {

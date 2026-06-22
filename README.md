@@ -3,7 +3,7 @@
 ## Building and Running
 
 ```bash
-make milestone6   # Build Node Access Synchronization Simulation
+make milestone7   # Build Node Access Scheduling Simulation
 
 # Note: The following milestones are not supported in this version
 make milestone1   # Build Dijkstra (CLI)
@@ -11,6 +11,7 @@ make milestone2   # Build Graph Visualization
 make milestone3   # Build Traffic Animation
 make milestone4   # Build Multi-Process Traffic Simulation
 make milestone5   # Build IPC Multi-Process Traffic Simulation
+make milestone6   # Build Node Access Synchronization Simulation
 
 make clean        # Remove compiled files
 ```
@@ -18,7 +19,8 @@ make clean        # Remove compiled files
 ### Running
 
 ```bash
-./sim <input_file>
+./sim-schd -schd fcfs <input_file>
+./sim-schd -schd priority <input_file>
 ```
 
 ### Input File Format
@@ -29,10 +31,12 @@ make clean        # Remove compiled files
 ...
 (repeat for num_edges)
 <num_travelers>
-<dijkSrc> <dijkDst>
+<dijkSrc> <dijkDst> <priority>
 ...
 (repeat for num_travelers)
 ```
+
+* the smaller the priority number is, the more "important" the traveler actually is
 
 Example (input.txt):
 ```
@@ -48,8 +52,8 @@ Example (input.txt):
 3 5 2
 4 5 3
 2
-0 5
-1 4
+0 5 2
+1 4 1
 ```
 
 ---
@@ -104,3 +108,28 @@ Implemented a robust, process-level synchronization mechanism to ensure that no 
     - `EVENT_LEAVING`: Child has released the lock and is moving to the next edge.
 - **No Starvation:** The use of standard POSIX semaphores ensures that waiting processes are handled fairly by the OS scheduler, preventing starvation.
 - **Visual Feedback:** The GUI accurately reflects these OS-level states, providing a real-time visualization of process synchronization and critical section management.
+
+### Milestone 7: Scheduling Algorithms
+
+Replaced the random order of node-entry management with deterministic scheduling algorithms. When multiple travelers wait outside a node, their entry order is decided by the chosen policy.
+
+#### Supported Scheduling Policies
+1. **First-Come, First-Served (FCFS):** Wakes up waiting processes in the exact order they approached the node.
+2. **Priority:** Prioritizes processes according to the priority field specified in the input file (lower number = higher priority).
+
+#### Usage Examples
+```bash
+./sim-schd fcfs input_schd.txt
+./sim-schd priority input_schd.txt
+```
+
+#### Demonstrating the Difference (`input_schd.txt`)
+In [input_schd.txt](file:///home/student/CLionProjects/Final-Project-in-OS/input_schd.txt), 10 travelers are simulated. Travelers starting at Node 0 (Travelers 0, 3, 7) and Node 2 (Travelers 2, 5, 6, 9) must pass through Node 2 on their way to destination Node 5. Because Node 2 is a bottleneck, multiple travelers must queue outside.
+
+* **FCFS:** Travelers enter Node 2 in the exact order they arrive/queue. For example, Traveler 9 (priority 10, starting at Node 2) is allowed to enter Node 2 before Traveler 0 (priority 1, starting at Node 0) simply because Traveler 9 was already waiting at Node 2 from the start (t = 0), whereas Traveler 0 had to travel from Node 0.
+* **Priority:** The queue outside Node 2 is dynamically sorted by priority (lower number = higher priority). Even though Traveler 0 (priority 1) arrives later because it has to travel from Node 0, it is prioritized and enters Node 2 before Traveler 6 (priority 7) and Traveler 9 (priority 10) who have been waiting since the start. Similarly, Traveler 3 (priority 4) is prioritized over lower-priority travelers.
+
+#### Brief Comparison of Scheduling Algorithms
+* **FCFS:** Simple and fair based on arrival sequence, preventing process starvation. However, it is susceptible to the *convoy effect* where a traveler with a slow/long journey blocks more critical or shorter-path travelers behind it.
+* **Priority:** Allows scheduling high-priority processes (e.g. emergency or VIP travelers) with minimal delay. A drawback is *starvation* where lower-priority processes might wait indefinitely if high-priority travelers keep arriving.
+

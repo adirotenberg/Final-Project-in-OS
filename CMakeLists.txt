@@ -8,7 +8,7 @@ set(RAYLIB_INCLUDE_DIR "${RAYLIB_ROOT}/include")
 set(RAYLIB_LIB_DIR "${RAYLIB_ROOT}/lib")
 
 
-add_executable(ProjectOS main.c
+add_executable(sim-schd main.c
         Graph.c
         Graph.h
         DijkstraRes.c
@@ -27,9 +27,9 @@ add_executable(ProjectOS main.c
 )
 
 
-target_include_directories(ProjectOS PUBLIC "${RAYLIB_INCLUDE_DIR}")
-target_link_directories(ProjectOS PUBLIC "${RAYLIB_LIB_DIR}")
-target_link_libraries(ProjectOS
+target_include_directories(sim-schd PUBLIC "${RAYLIB_INCLUDE_DIR}")
+target_link_directories(sim-schd PUBLIC "${RAYLIB_LIB_DIR}")
+target_link_libraries(sim-schd
         raylib
         opengl32
         gdi32
