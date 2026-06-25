@@ -20,6 +20,9 @@ InputData *readFile(const char *filename) {
         return NULL;
     }
 
+
+
+    
     if (numOfVertices <= 0 || numOfEdges <= 0) {
         printf("Error: Number of vertices and Edges must be positive\n");
         fclose(fp);
