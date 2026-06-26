@@ -8,7 +8,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void simulation(InputData* data, int pipes[][2], int numOfTravelers){
+void simulation(
+    InputData *data,
+    int childToParent[][2],
+    int parentToChild[][2],
+    int numOfTravelers
+){
 
     Graph *graph = data->graph;
 
@@ -69,13 +74,17 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                 }
 
                 TravelMessage msg;
-                ssize_t bytesRead = read(pipes[i][0], &msg, sizeof(TravelMessage));
+                //ssize_t bytesRead = read(pipes[i][0], &msg, sizeof(TravelMessage));
+                ssize_t bytesRead = read(childToParent[i][0], &msg, sizeof(TravelMessage));
 
                 if (bytesRead == sizeof(TravelMessage)) {
                     states[i].currentNode = msg.currentNode;
                     states[i].nextNode = msg.nextNode;
                     states[i].finished = msg.finished;
                     states[i].currentStep = 0;
+
+                    char ack = 'A';
+                    write(parentToChild[i][1], &ack, sizeof(char));
 
                     if (msg.finished) {
                         printf("[PID=%d] arrived at node %d | DESTINATION\n",
