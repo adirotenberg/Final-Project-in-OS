@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    simulation(data, pipes, data->numOfTravelers, schd, waitingQueues, queuesLengths);
+    simulation(data, pipes, data->numOfTravelers, schd, waitingQueues, queuesLengths, pids);
 
     // Wait for all children
     for (int i = 0; i < data->numOfTravelers; i++) {

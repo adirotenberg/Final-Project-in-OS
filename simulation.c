@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues, int * queuesLengths);
+int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues, int * queuesLengths, pid_t *pids);
 void leaveQueue(int i, int node, int ** waitingQueues, int * queuesLengths);
 
-void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, int ** waitingQueues, int * queuesLengths){
+void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, int ** waitingQueues, int * queuesLengths, pid_t *pids){
     Graph *graph = data->graph;
 
     Vector2 pos[MAX_VERTICES];
@@ -56,7 +56,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
             // Failure: Node is already occupied (someone else started there), wait outside
             states[i].isQueueingOutside = true;
             states[i].nextNode = startNode;
-            addToQueue(i, startNode, schd, data, waitingQueues, queuesLengths);
+            addToQueue(i, startNode, schd, data, waitingQueues, queuesLengths, pids);
         }
     }
 
@@ -235,7 +235,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
 
                     if (states[i].edgeProgress >= triggerProgress) {
                         // Join the queue
-                        int placeInQueue = addToQueue(i, dst, schd, data, waitingQueues, queuesLengths);
+                        int placeInQueue = addToQueue(i, dst, schd, data, waitingQueues, queuesLengths, pids);
                         printf("[PID=%d] Approaching Node %d. Waiting for entry permission...\n", states[i].pid, dst);
                         
                         // Update queuePos to see where we were placed
@@ -345,8 +345,8 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
             );
             DrawCircle((int)entityPos.x, (int)entityPos.y, 10, drawColor);
             char str[12];
-            snprintf(str, sizeof(str), "%d", data->travelers[i][2]);
-            DrawText(str, (int)entityPos.x - 5, (int)entityPos.y - 10, 20, BLACK);
+            snprintf(str, sizeof(str), "%d", pids[i] % 100);
+            DrawText(str, (int)entityPos.x - 5, (int)entityPos.y - 5 , 10, BLACK);
         }
 
         if (allFinished) {
@@ -367,7 +367,7 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
     CloseWindow();
 }
 
-int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues, int * queuesLengths) {
+int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues, int * queuesLengths, pid_t *pids) {
     //if we're trying to add a traveler to a queue that's already full, we're not going to let it (even though this situation can't actually happen, we only have numOfTravelers amount of travelers
     if (queuesLengths[node] == data->numOfTravelers) return -1;
 
@@ -389,7 +389,10 @@ int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues,
         // If the traveler in the queue is LESS important (higher priority number)
         // than our new traveler 'i', we shift them to the right.
         //the priority number is in the 3rd field of each traveler in the travelers array
-        if (data->travelers[travelerInQueue][2] > data->travelers[i][2]) {
+
+        ////////////////////////////////////////////////////////////////////////
+        //change for exam: checking pids - if the pid of the traveler in queue is bigger than our new traveler 'i', we shift them to the right
+        if (pids[travelerInQueue] > pids[i]) {
             waitingQueues[node][idx + 1] = travelerInQueue;
             idx--;
         } else {
