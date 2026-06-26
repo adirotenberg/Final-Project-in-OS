@@ -21,12 +21,20 @@ typedef struct {
     int nextNode;
 } TravelerState;
 
+
+typedef enum {
+    MSG_MOVE,
+    MSG_FINISHED,
+    MSG_NO_PATH
+} MessageType;
+
 typedef struct {
     pid_t pid;
     int travelerIndex;
     int currentNode;
     int nextNode;
     int finished;
+    MessageType type;
 } TravelMessage;
 
 void simulation(InputData* data, int pipes[][2], int numOfTravelers);

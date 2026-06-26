@@ -103,10 +103,26 @@ int main(int argc, char *argv[]) {
 
             DijkstraRes *res = dijkstra(data->graph, src, dst);
 
-            if (res == NULL) {
+            if (res == NULL || res->path == NULL || res->pathLength == 0) {
+                TravelMessage msg;
+
+                msg.pid = getpid();
+                msg.travelerIndex = i;
+                msg.currentNode = src;
+                msg.nextNode = dst;
+                msg.finished = 1;
+                msg.type = MSG_NO_PATH;
+
+                write(pipes[i][1], &msg, sizeof(TravelMessage));
+
                 close(pipes[i][1]);
+
+                if (res != NULL) {
+                    freeDijkstraRes(res);
+                }
+
                 freeAll(data, pids, pipes);
-                exit(EXIT_FAILURE);
+                exit(EXIT_SUCCESS);
             }
 
             for (int j = 0; j < res->pathLength; j++) {
@@ -117,10 +133,14 @@ int main(int argc, char *argv[]) {
                 msg.currentNode = res->path[j];
                 msg.finished = (j == res->pathLength - 1);
 
-                if (msg.finished)
+                if (msg.finished) {
                     msg.nextNode = -1;
-                else
+                    msg.type = MSG_FINISHED;
+                }
+                else {
                     msg.nextNode = res->path[j + 1];
+                    msg.type = MSG_MOVE;
+                }   
 
                 write(pipes[i][1], &msg, sizeof(TravelMessage));
             }

@@ -72,6 +72,19 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers){
                 ssize_t bytesRead = read(pipes[i][0], &msg, sizeof(TravelMessage));
 
                 if (bytesRead == sizeof(TravelMessage)) {
+
+                    if (msg.type == MSG_NO_PATH) {
+                        printf("[PID=%d] traveler %d: NO PATH from node %d to node %d\n",
+                            msg.pid, msg.travelerIndex, msg.currentNode, msg.nextNode);
+
+                        states[i].currentNode = msg.currentNode;
+                        states[i].nextNode = -1;
+                        states[i].finished = true;
+                        states[i].currentStep = 0;
+
+                        continue;
+                    }
+
                     states[i].currentNode = msg.currentNode;
                     states[i].nextNode = msg.nextNode;
                     states[i].finished = msg.finished;
