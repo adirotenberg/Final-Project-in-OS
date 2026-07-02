@@ -13,7 +13,7 @@ DijkstraRes *dijkstra(Graph *graph, int src, int dst) {
 
     if (dist == NULL) {
         printf("Error: Failed to create distance array");
-        return NULL;
+        return NULL;  
     }
 
     int *parent = malloc(sizeof(int) * n);
