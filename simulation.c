@@ -52,6 +52,10 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
             // Success: Occupy the node and start the 1s dwell timer
             graph->vertices[startNode].occupying_traveler_id = i;
             states[i].isWaitingAtNode = true;
+            
+            // --- MILESTONE 7 (Task b) ---
+            printf("Scheduler [Main Thread]: Switching to Process PID=%d (Traveler %d) with Priority=%d on Node %d\n", 
+                   states[i].pid, i, data->travelers[i][2], startNode);
         } else {
             // Failure: Node is already occupied (someone else started there), wait outside
             states[i].isQueueingOutside = true;
@@ -148,6 +152,10 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
                         graph->vertices[targetNode].occupying_traveler_id = i;
                         states[i].isQueueingOutside = false;
                         leaveQueue(i, targetNode,waitingQueues,queuesLengths);
+
+                        // --- MILESTONE 7 (Task b) ---
+                        printf("Scheduler [Main Thread]: Switching to Process PID=%d (Traveler %d) with Priority=%d on Node %d\n", 
+                               states[i].pid, i, data->travelers[i][2], targetNode);
 
                         if (states[i].currentNode != targetNode) {
                             states[i].currentNode = targetNode;
@@ -368,49 +376,34 @@ void simulation(InputData* data, int pipes[][2], int numOfTravelers, int schd, i
 }
 
 int addToQueue(int i, int node, int schd, InputData* data, int ** waitingQueues, int * queuesLengths) {
-    //if we're trying to add a traveler to a queue that's already full, we're not going to let it (even though this situation can't actually happen, we only have numOfTravelers amount of travelers
     if (queuesLengths[node] == data->numOfTravelers) return -1;
 
-    //if the scheduling algorithm is FCFS, (or it's Priority but the queue for that node is empty anyway)
-    //just add the traveler to the first unoccupied place in the queue (or in Priority case, to the beginning of the queue)
     if (schd == FCFS || (schd == PRIORITY && queuesLengths[node] == 0)) {
         waitingQueues[node][queuesLengths[node]++] = i;
         return queuesLengths[node] - 1;
     }
-    //else, the scheduling is Priority and we need to add the traveler to the queue according to its priority
     int idx = queuesLengths[node] - 1;
 
-    // Walk backwards, shifting elements to the right to make room
     while (idx >= 0) {
-        // 1. Get the ID of the traveler currently sitting at this spot in the queue
         int travelerInQueue = waitingQueues[node][idx];
 
-        // 2. Check priorities.
-        // If the traveler in the queue is LESS important (higher priority number)
-        // than our new traveler 'i', we shift them to the right.
-        //the priority number is in the 3rd field of each traveler in the travelers array
         if (data->travelers[travelerInQueue][2] > data->travelers[i][2]) {
             waitingQueues[node][idx + 1] = travelerInQueue;
             idx--;
         } else {
-            // We found someone more important or equal; stop shifting!
             break;
         }
     }
 
-    // Drop the new element into its rightful spot
     waitingQueues[node][idx + 1] = i;
     queuesLengths[node]++;
     return idx + 1;
-
 }
 
 void leaveQueue(int i, int node, int ** waitingQueues, int * queuesLengths) {
-    //if we accidentally try to get a different traveler from the queue that isn't the first one in the queue
     if (waitingQueues[node][0] != i) return;
     int idx = 1;
 
-    //shifting elements to the left because the first element left the queue
     while (idx < queuesLengths[node]) {
         waitingQueues[node][idx - 1] = waitingQueues[node][idx];
         idx ++;
